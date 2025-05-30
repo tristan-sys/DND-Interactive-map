@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>D&D Interactive Map with Shields</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #1b342f;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #map-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    #map {
+      width: 1879px;
+      border: 4px solid #1b342f;
+    }
+
+    .shield-counter {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #ffffff;
+      padding: 5px 10px;
+      border: 2px solid #1b342f;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      transition: background-color 0.3s;
+    }
+
+    .shield-counter:hover {
+      background-color: rgba(0, 255, 204, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>D&D World Shield Status</h1>
+
+  <div id="map-container">
+    <img id="map" src="map.png" alt="D&D Map" />
+    
+    <!-- Town overlays will be added here by JavaScript -->
+  </div>
+
+  <script>
+    const towns = [
+      {
+        name: "brighthollow",
+        years: 10,
+        x: 1310, // horizontal position in px from x=1340, y=531
+        y: 560, // vertical position in px from top 
+        wiki: "https://example.com/silverhold"
+      },
+      {
+        name: "Solmere",
+        years: 7,
+        x: 900,
+        y: 300,
+        wiki: "https://example.com/dragonmere"
+      },
+      {
+        name: "Dawnmere",
+        years: 5,
+        x: 1265,
+y: 699,
+
+        wiki: "https://example.com/moonwatch"
+      },
+      {
+        name: "Frostmaw",
+        years: 7,
+        x: 1495,
+y: 331,
+
+        wiki: "https://example.com/dragonmere"
+      }, {
+        name: "solmere",
+        years: 7,
+        x: 1186,
+y: 321,
+
+        wiki: "https://example.com/dragonmere"
+      }, {
+        name: "Elarias Rest",
+        years: 7,
+        x: 1034,
+y: 403,
+
+        wiki: "https://example.com/dragonmere"
+      }, {
+        name: "noctspire",
+        years: 7,
+        x: 1585,
+y: 701,
+cwiki: "https://example.com/dragonmere"
+      }, {
+        name: "Bazionia",
+        years: 7,
+        x: 1415,
+y: 181,
+}
+    ];
+
+    const minutesPerYear = 20;
+    const millisecondsPerYear = minutesPerYear * 60 * 1000;
+
+    const mapContainer = document.getElementById("map-container");
+
+    towns.forEach((town, index) => {
+      const div = document.createElement("div");
+      div.className = "shield-counter";
+      div.style.left = town.x + "px";
+      div.style.top = town.y + "px";
+      div.id = `shield-${index}`;
+      div.textContent = `${town.years} Years`;
+
+      div.onclick = () => {
+        window.open(town.wiki, "_blank");
+      };
+
+      mapContainer.appendChild(div);
+
+      // Timer logic
+      const updateCounter = () => {
+        div.textContent = town.years > 0
+          ? `${town.years} Year${town.years !== 1 ? "s" : ""}`
+          : "Shield Fallen!";
+      };
+
+      updateCounter();
+
+      const timer = setInterval(() => {
+        town.years--;
+        updateCounter();
+        if (town.years <= 0) clearInterval(timer);
+      }, millisecondsPerYear);
+    });
+  </script>
+
+</body>
+</html>
