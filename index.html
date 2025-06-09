@@ -2,224 +2,295 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>D&D Shield Countdown</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shield Map</title>
   <style>
     body {
       margin: 0;
-      background: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
+      padding: 0;
+      background-color: #1e1e2f;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #a7a791;
     }
+
     #map-container {
       position: relative;
-      display: inline-block;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
     }
-    #map {
+
+    #map-image {
       width: 1920px;
-      border: 4px solid #1b342f;
+      height: auto;
+      display: block;
     }
+
     .shield-counter {
       position: absolute;
       padding: 6px 10px;
+      border: 2px solid;
       border-radius: 10px;
       font-size: 0.9em;
-      font-weight: bold;
-      cursor: pointer;
-      transform: translate(-50%, -50%);
-      transition: background-color 0.3s;
-      border: 2px solid #fff;
       text-align: center;
-      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px #00000080;
+      transition: background-color 0.3s, transform 0.2s;
+      min-width: 90px;
+      cursor: pointer;
+      user-select: none;
     }
-    .green { background-color: rgba(0, 128, 0, 0.7); }
-    .yellow { background-color: rgba(255, 165, 0, 0.7); }
-    .red { background-color: rgba(139, 0, 0, 0.8); }
 
-    #toggle {
-      margin: 15px auto;
-      padding: 10px 20px;
-      font-size: 1rem;
-      background: #333;
-      color: #fff;
-      border: 2px solid #0fc;
+    /* Left side style (blackish) - no timers, same style, no glow */
+    .left-town {
+      background: rgba(30, 30, 30, 0.85);
+      border-color: #111;
+      color: #ddd;
+      text-shadow: none;
+      box-shadow: 0 0 10px #111 inset;
+    }
+
+    /* Right side style (less intense yellow) */
+    .right-town {
+      background: rgba(230, 200, 50, 0.85);
+      border-color: #99904e;
+      color: #99904e;
+    }
+    .right-town.glow {
+      animation: yellowGlowPulse 2.5s infinite alternate;
+      text-shadow:
+        0 0 5px  #99904e,
+        0 0 10px #99904e,
+        0 0 20px #99904e,
+        0 0 30px #99904e;
+    }
+    @keyframes yellowGlowPulse {
+      0% {
+        opacity: 0.75;
+        filter: drop-shadow(0 0 5px #99904e);
+      }
+      100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 15px #99904e);
+      }
+    }
+
+    .shield-name {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .shield-years {
+      font-size: 0.85em;
+    }
+
+    /* Bottom bar */
+    #bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(30, 30, 40, 0.9);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 -2px 8px #00000080;
+      display: flex;
+      align-items: center;
+      padding: 8px 20px;
+      gap: 15px;
+      font-size: 1em;
+      z-index: 9999;
+      flex-wrap: wrap;
+    }
+
+    #timer-toggle {
+      padding: 8px 16px;
+      background: #282c34;
+      border: 2px solid #2585df;
       border-radius: 8px;
+      color: #2585df;
       cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s, color 0.3s;
     }
-    #toggle:hover {
-      background: #0fc;
-      color: #000;
+    #timer-toggle.active {
+      background: #2585df;
+      color: #282c34;
     }
-
-    .config-panel {
-      margin-top: 20px;
-      color: #fff;
-      background: #222;
-      border: 2px solid #0fc;
-      border-radius: 10px;
-      padding: 15px;
-      display: inline-block;
+    #timer-toggle:hover {
+      background: #444c34;
+      color: #c8ffc8;
     }
 
-    .config-row {
-      margin: 8px 0;
+    /* Distance calculator styling */
+    #distance-calculator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-grow: 1;
+      max-width: 700px;
     }
 
-    select, input[type="number"] {
-      padding: 5px;
-      font-size: 0.95em;
-      border-radius: 5px;
-      border: 1px solid #aaa;
+    #distance-calculator label {
+      font-weight: bold;
+      margin-right: 5px;
+      min-width: 50px;
     }
 
-    button.apply {
-      margin-left: 10px;
-      padding: 5px 10px;
-      background: #0fc;
-      border: none;
-      border-radius: 5px;
-      color: #000;
+    select, button {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1em;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 2px solid #2585df;
+      background-color: #282c34;
+      color: #2585df;
       cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+      min-width: 140px;
+    }
+    select:hover, button:hover {
+      background-color: #2585df;
+      color: #282c34;
     }
 
-    button.apply:hover {
-      background: #0c9;
+    #distance-result {
+      font-weight: bold;
+      min-width: 250px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 2px solid #2585df;
+      background-color: #202626;
+      color: #2585df;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <body>
-  <h1>D&D World Shield Countdown</h1>
-  <button id="toggle">⏸ Pause Countdown</button>
-  <button id="adminLogin">🔐 Admin Login</button>
-
-  <div class="config-panel" id="configPanel" style="display: none;">
-    <div class="config-row">
-      <label for="townSelect">🛡 Select Town: </label>
-      <select id="townSelect"></select>
-    </div>
-    <div class="config-row">
-      <label for="durationInput">🔧 New Duration (Years): </label>
-      <input type="number" id="durationInput" min="1" max="50" />
-      <button class="apply" id="applyBtn">Apply</button>
-    </div>
+  <div id="map-container">
+    <img id="map-image" src="map.png" alt="Shield Map" />
   </div>
 
-  <div id="map-container">
-    <img id="map" src="map.png" alt="D&D Map" />
+  <div id="bottom-bar">
+    <button id="timer-toggle" class="active">Stop Timer</button>
+
+    <div id="distance-calculator" aria-label="Distance Calculator">
+      <label for="from-town">From:</label>
+      <select id="from-town"></select>
+
+      <label for="to-town">To:</label>
+      <select id="to-town"></select>
+
+      <button id="calc-distance">Calculate Distance</button>
+
+      <div id="distance-result" aria-live="polite" aria-atomic="true" role="region">
+        Select towns and calculate distance
+      </div>
+    </div>
   </div>
 
   <script>
-    const ADMIN_PASSWORD = "dmsecret";
+    document.addEventListener('DOMContentLoaded', () => {
+      const towns = [
 
-    document.getElementById("adminLogin").onclick = () => {
-      const input = prompt("Enter DM password:");
-      if (input === ADMIN_PASSWORD) {
-        document.getElementById("configPanel").style.display = "inline-block";
-        alert("✅ Admin mode enabled.");
-      } else {
-        alert("❌ Incorrect password.");
-      }
-    };
-  </script>
-</body>
-    </div>
-  </div>
+  { name: "Solmere",             x: 408,  y: 614, years: 5, showTimer: false },
+  { name: "Dawnmere",            x: 522,  y: 428, years: 5, showTimer: true },
+  { name: "Frostmaw",            x: 741,  y: 667, years: 5, showTimer: true },
+  { name: "Elaria's Rest",       x: 684,  y: 499, years: 5, showTimer: true },
+  { name: "Noctspire",           x: 706,  y: 415, years: 5, showTimer: true },
+  { name: "Bazionia",            x: 886,  y: 420, years: 5, showTimer: true },
+  { name: "Bright Hollow",       x: 1028, y: 594, years: 5, showTimer: true },
+  { name: "Hollowmire",          x: 940,  y: 280, years: 5, showTimer: true },
+  { name: "Duskwatch",           x: 1030, y: 370, years: 5, showTimer: true },
+  { name: "Ashtown",             x: 1093, y: 434, years: 5, showTimer: true },
+  { name: "Shadewyn",            x: 1302, y: 434, years: 5, showTimer: true },
+  { name: "Bretrish Union",      x: 1352, y: 663, years: 5, showTimer: true },
+  { name: "Cradle of Ash",       x: 1602, y: 518, years: 5, showTimer: true },
+  { name: "Gravehide",           x: 1541, y: 368, years: 5, showTimer: true },
+  { name: "Kingdom of Newgesia", x: 1452, y: 152, years: 5, showTimer: true }
 
-  <div id="map-container">
-    <img id="map" src="" alt="D&D Map" />
-  </div>
 
-  <script>
-    const minutesPerYear = 20;
-    const millisecondsPerYear = minutesPerYear * 60 * 1000;
+];
 
-    let paused = false;
+      const container = document.getElementById('map-container');
+      const timerToggle = document.getElementById('timer-toggle');
+      const fromSelect = document.getElementById('from-town');
+      const toSelect = document.getElementById('to-town');
+      const calcBtn = document.getElementById('calc-distance');
+      const distanceResult = document.getElementById('distance-result');
 
-    const towns = [
-      { name: "Bright Hollow", years: 10, x: 1310, y: 560, wiki: "https://example.com/dragonmere" },
-      { name: "Solmere", years: 7, x: 900, y: 300, wiki: "https://example.com/dragonmere" },
-      { name: "Dawnmere", years: 5, x: 1265, y: 699, wiki: "https://example.com/moonwatch" },
-      { name: "Frostmaw", years: 7, x: 1495, y: 331, wiki: "https://example.com/dragonmere" },
-      { name: "Elaria's Rest", years: 7, x: 1034, y: 403, wiki: "https://example.com/dragonmere" },
-      { name: "Noctspire", years: 7, x: 1585, y: 701, wiki: "https://example.com/dragonmere" },
-      { name: "Bazionia", years: 7, x: 1415, y: 181, wiki: "https://example.com/dragonmere" }
-    ];
+      let timerRunning = true;
+      const intervals = [];
 
-    const mapContainer = document.getElementById("map-container");
-    const townSelect = document.getElementById("townSelect");
-    const durationInput = document.getElementById("durationInput");
+      towns.forEach(town => {
+        const marker = document.createElement('div');
+        marker.className = 'shield-counter';
 
-    const countdownData = [];
-
-    // Populate dropdown
-    towns.forEach((town, index) => {
-      const opt = document.createElement("option");
-      opt.value = index;
-      opt.textContent = town.name;
-      townSelect.appendChild(opt);
-    });
-
-    // Create shield counters
-    towns.forEach((town, index) => {
-      const div = document.createElement("div");
-      div.className = "shield-counter";
-      div.style.left = `${town.x}px`;
-      div.style.top = `${town.y}px`;
-      div.id = `shield-${index}`;
-      mapContainer.appendChild(div);
-
-      const getEndTime = (years) => Date.now() + years * millisecondsPerYear;
-
-      countdownData[index] = {
-        town,
-        element: div,
-        endTime: getEndTime(town.years)
-      };
-
-      // Handle click to open wiki
-      div.onclick = () => window.open(town.wiki, "_blank");
-    });
-
-    // Update UI every second
-    setInterval(() => {
-      countdownData.forEach(({ town, element, endTime }, i) => {
-        if (paused) return;
-
-        const now = Date.now();
-        const remaining = Math.max(0, countdownData[i].endTime - now);
-        const yearsLeft = remaining / millisecondsPerYear;
-
-        let className = "shield-counter ";
-        if (yearsLeft > 5) className += "green";
-        else if (yearsLeft > 1) className += "yellow";
-        else className += "red";
-
-        element.className = className;
-
-        if (yearsLeft <= 0) {
-          element.textContent = `${town.name}: Shield Fallen!`;
+        if (town.x < 960) {
+          marker.classList.add('left-town');
+          // Left towns never show timer info, even if years property exists
         } else {
-          const timeLeft = new Date(remaining).toISOString().substr(11, 8);
-          element.textContent = `${town.name}: ${timeLeft}`;
+          marker.classList.add('right-town');
+          if (town.showTimer) marker.classList.add('glow');
         }
+
+        marker.style.left = `${town.x}px`;
+        marker.style.top = `${town.y}px`;
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'shield-name';
+        nameEl.textContent = town.name;
+        nameEl.addEventListener('click', () => window.open('https://example.com', '_blank'));
+        marker.appendChild(nameEl);
+
+        // Only show timer info for right towns with showTimer
+        if (town.showTimer && town.x >= 960) {
+          const yEl = document.createElement('span');
+          yEl.className = 'shield-years';
+          yEl.textContent = `${town.years} Year${town.years !== 1 ? 's' : ''}`;
+          marker.appendChild(yEl);
+          intervals.push({ town, yEl, id: null });
+        }
+
+        container.appendChild(marker);
+
+        fromSelect.add(new Option(town.name, town.name));
+        toSelect.add(new Option(town.name, town.name));
       });
-    }, 1000);
 
-    // Toggle Pause/Resume
-    document.getElementById("toggle").onclick = function () {
-      paused = !paused;
-      this.textContent = paused ? "▶️ Resume Countdown" : "⏸ Pause Countdown";
-    };
+      timerToggle.addEventListener('click', () => {
+        timerRunning = !timerRunning;
+        timerToggle.textContent = timerRunning ? 'Stop Timer' : 'Start Timer';
+        timerToggle.classList.toggle('active', !timerRunning);
+      });
 
-    // Apply new duration
-    document.getElementById("applyBtn").onclick = () => {
-      const index = parseInt(townSelect.value);
-      const newYears = parseInt(durationInput.value);
-      if (isNaN(newYears) || newYears <= 0) return alert("Enter a valid number of years.");
-      countdownData[index].endTime = Date.now() + newYears * millisecondsPerYear;
-    };
+      calcBtn.addEventListener('click', () => {
+        const t1 = towns.find(t => t.name === fromSelect.value);
+        const t2 = towns.find(t => t.name === toSelect.value);
+        if (!t1 || !t2) return;
+        const dx = t2.x - t1.x, dy = t2.y - t1.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        let label = '';
+        if (d < 300) label = 'Short travel';
+        else if (d < 800) label = 'Long travel';
+        else label = 'Super long travel';
+        distanceResult.textContent = `${d.toFixed(1)} px — ${label}`;
+      });
+
+      intervals.forEach(item => {
+        item.id = setInterval(() => {
+          if (!timerRunning) return;
+          if (item.town.years > 0) item.town.years--;
+          item.yEl.textContent = item.town.years > 0
+            ? `${item.town.years} Year${item.town.years !== 1 ? 's' : ''}`
+            : 'Shield Fallen!';
+        }, 60000);
+      });
+    });
   </script>
 </body>
 </html>
